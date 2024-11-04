@@ -119,3 +119,120 @@ if (x == 5) {
 - No assumption on the speed or number of CPUs
 - No process outside a critical region can block other processes
 - No process waits forever to enter a critical region
+
+The lock should be obtained before checking and modifying the resource.
+
+=== Peterson's Algorithm
+
+Peterson's algorithm is symmetric for two processes.
+
+```c
+#define TRUE 1
+#define FALSE 0
+int turn;
+int interested[2];
+void enter_region(int p) {
+  int other;
+  other = 1 - p;
+  interested[p] = TRUE;
+  turn = p;
+  while (turn == p && interested[other] == TRUE)
+}
+void leave_region(int p) {
+  interested[p] = FALSE;
+}
+```
+
+=== Mutual Exclusion at Hardware Level
+
+- Disabling interrupts
+- Use atomic operations
+  - Test and set lock `TSL`
+
+=== Semaphore
+
+A semaphore is a positive integer and is only managed by two actions:
+
+```c
+sem.down() {
+  while(sem==0) sleep();
+  sem--;
+}
+```
+
+```c
+sem.up() {
+  sem++;
+}
+```
+
+An awaken sleeping process can complete its `down`.
+
+Checking or changing the value and sleeping are done atomically:
+- Single CPU: disable interrupts
+- Multiple CPUs: use `TSL` to ensure only one CPU accesses the semaphore
+
+A mutex is a semaphore taking values 0 (unlocked) or 1 (locked).
+
+On the request of locking a mutex, if the mutex is already locked, put the calling thread to sleep.
+
+The implementation of a mutex using `TSL`:
+
+```
+mutex-lock:
+  TSL REGISTER, MUTEX
+  CMP REGISTER, #0
+  JZ ok
+  CALL thread_yield
+  JMP mutex-lock
+ok:
+  RET
+mutex-unlock:
+  MOVE MUTEX, #0
+  RET
+```
+
+Using a mutex to solve the producer-consumer problem:
+
+```c
+pthread_mutex_t m;
+pthread_cond_t cc, cp;
+int buf = 0;
+
+void *prod() {
+  for (int i = 1; i < MAX; i++) {
+    pthread_mutex_lock(&m);
+    while (buf != 0)
+      pthread_cond_wait(&cp, &m);
+    buf = 1;
+    pthread_cond_signal(&cc);
+    pthread_mutex_unlock(&m);
+  }
+  pthread_exit(0);
+}
+
+void *cons() {
+  for (int i = 1; i < MAX; i++) {
+    pthread_mutex_lock(&m);
+    while (buf == 0)
+      pthread_cond_wait(&cc, &m);
+    buf = 0;
+    pthread_cond_signal(&cp);
+    pthread_mutex_unlock(&m);
+  }
+  pthread_exit(0);
+}
+```
+
+== More Solutions
+
+=== Monitors
+
+Basic idea behind monitors:
+- The mutual exclusion is not handled by the programmer
+- Locking occurs automatically
+- Only one process can be active within a monitor at a time
+- A monitor can be seen as a “special type of class”
+- Processes can be blocked and awaken *based on condition variables and wait and signal functions*
+
+Monitors are useful when several processes must complete before the next phase.
