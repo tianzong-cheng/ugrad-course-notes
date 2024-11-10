@@ -22,9 +22,9 @@
 
 == Processes
 
-- Process is the unit for resuorce management
-- Multiprogramming issue: rate of computatino of a process is not uniform / reproducible
-- Process hierachies
+- Process is the unit for resource management
+- Multiprogramming issue: rate of computation of a process is not uniform / reproducible
+- Process hierarchies
   - UNIX
     - parent-child
     - "process group"
@@ -236,3 +236,17 @@ Basic idea behind monitors:
 - Processes can be blocked and awaken *based on condition variables and wait and signal functions*
 
 Monitors are useful when several processes must complete before the next phase.
+
+= Scheduling
+
+== Requirements
+
+== Common Scheduling Algorithms
+
+== Notes and Problems
+
+Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A1 A2 A3` are threads of process `A`). Note that the kernel is not aware of the status of the threads in this case.
+
+=== Dining Philosophers Problem
+
+What is the purpose of the semaphore?
