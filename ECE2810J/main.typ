@@ -12,6 +12,20 @@
 
 = Asymptotic Algorithm Analysis
 
+- Big O Notation: upper bound
+  - $f(n) = O(g(n)) <=> 0 <= f(n) <= c g(n), forall n >= n_0$
+- Big Omega Notation: lower bound
+- Big Theta Notation: tight bound
+  - $f(n) = Theta(g(n)) <=> f(n) = O(g(n)) = Omega(g(n))$
+
+== Master Theorem
+
+For $T(n) <= a T(n / b) + O(n^d)$,
+
+- If $a < b^d$, $T(n) = O(n^d)$;
+- If $a = b^d$, $T(n) = O(n^d log n)$
+- If $a > b^d$, $T(n) = O(n^(log_b a))$
+
 = Comparison Sort
 
 == Bubble Sort
@@ -457,3 +471,278 @@ Remarks: Deterministic selection has a bigger constant for average time complexi
   [Expression], [$T(n) <= T(3 / 4n)+O(n)$], [$T(n) <= c n + T(n / 5) + T (7 / 10 n)$],
   [Time complexity], [$O(n)$], [$O(n)$],
 )
+
+= Hashing
+
+== Basics
+
+Load factor: $L = n / m$, where $n$ is the number of keys and $m$ is the number of buckets.
+
+$h(t) = c(t("key"))$
+
+- $t("key")$ converts the key into an integer
+- $c("code")$ maps the integer to a bucket
+
+== Collision Resolution
+
+=== Separate Chaining
+
+Idea: Each table entry is a linked list.
+
+=== Open Addressing
+
+Idea: Collisions are resolved by probing.
+
+Remove: Mark the entry as deleted rather than removing.
+
+- Linear probing: $h_i (k) = (h(k) + i) mod m$
+- Quadratic probing: $h_i (k) = (h(k) + i^2) mod m$
+- Double hashing: $h_i (k) = (h(k) + i dot g(k)) mod m$
+
+#table(
+  columns: 4,
+  align: (left, center, center, center),
+  [], [Linear Probing], [Quadratic Probing], [Double Hashing],
+  [Successful], [$1 / 2 (1 + 1 / (1 - L))$], [$1 / L ln (1 / (1 - L))$], [$1 / L ln (1 / (1 - L))$],
+  [Unsuccessful], [$1 / 2 (1 + (1 / (1 - L))^2)$], [$1 / (1 - L)$], [$1 / (1 - L)$],
+)
+
+Summary: quadratic probing and double hashing reduces clustering.
+
+=== Comparison
+
+- If resizing is frequent, open addressing is better.
+- If removing items is needed, separate chaining is better.
+
+== Hash Table Size
+
+Calculate the minimum table size from the load factor, and pick *a prime number* which is larger than the minimum size.
+
+== Rehashing
+
+Goal: resize the table when the load factor exceeds a threshold.
+
+Usually $t("key")$ is the same, and $c("code")$ is different.
+
+Amortized analysis: A method of analyzing algorithms that considers the entire sequence of operations of the program. The idea is that while certain operations may be costly, they *don't occur frequently*; the less costly operations are much more than the costly ones in the long run. Therefore, the cost of those expensive operations is averaged over a sequence of operations.
+
+== Universal Hashing
+
+*TODO*
+
+== Bloom Filter
+
+Goal: check whether a key is in a set without storing the whole set
+
+=== Comparison to Hash Tables
+
+- Pros
+  - More space efficient
+- Cons
+  - Can't store an associated object, i.e., no key-value pair
+  - No deletion
+  - Small false positive probability, but no false negative
+
+=== Algorithm
+
+Components:
+
+- An array of $n$ bits
+  - $n = b|S|$, where $b$ is small real number.
+- $k$ hash functions
+
+Operations:
+
+- Insert: set $A[h_i (x)]$ to $1$ for all $i$ (hash functions)
+- Find: return true if $A[h_i (x)]$ is $1$ for all $i$.
+
+=== Analysis of Error Probability
+
+$P[A[j] = 0] = (1 - 1 / n)^(k|S|) => P[A[j] = 1] = 1 - (1 - 1 / n)^(k|S|) approx 1 - e^(-k / b)$
+
+False positive rate: $epsilon approx (1 - e^(-k / b))^k$
+
+For a fixed $b$, $epsilon$ is minimized when $k = (ln 2) dot b$.
+
+= Trees
+
+== Concepts
+
+- Sibling: nodes that share the same parent
+- Height of node: length of the longest path from the node to a leaf
+- Height of tree / Depth of tree: height of the root
+- Number of levels of a tree: height of tree + 1
+- Degree of node: number of children
+- Degree of tree: the maximum degree of a node in a tree
+
+Binary tree:
+- Proper: every node has 0 / 2 children
+- Complete:
+  - every level except the lowest level is fully populated
+  - the lowest level is populated from left to right
+- Perfect: fully populated
+
+== Binary Tree Traversal
+
+- Pre-order: *node*, left, right
+- In-order: left, *node*, right
+- Post order: left, right, *node*
+
+We can determine one tree from in-order traversal and one of pre-order traversal and post-order travsersal. Several trees can have the same pre-order travsersal and post-order traversal.
+
+Rebuild method: determine root from pre-order or post-order traversal, and then divide left subtree and right subtree by in-order traversal.
+
+= Priority Queue and Heap
+
+== Time Complexity of Priority Queue Implemented with Heap
+
+- `isEmpty`, `size`, `getMin`: $O(1)$
+- `enqueue`, `dequeueMin`: $O(log n)$ in the worst case
+
+== Binary Heap
+
+A binary heap is a complete binary tree.
+
+For any node `v`, the key of `v` is smaller than or equal to the keys of
+any descendants of `v`. Thus, the root is always the smallest element in the tree.
+
+The height of a binary heap (a complete binary tree) is $floor(log_2 (n+1)) - 1$.
+
+Elements are stored in a level-order traversal of the tree.
+
+=== Operations
+
+Insert:
+
+1. Insert as the rightmost leaf (last in the array);
+2. *Percolate up* the new item to an appropriate spot.
+
+```cpp
+void minHeap::percolateUp(int id) {
+  while (id > 1 && heap[id / 2] > heap[id]) {
+    swap(heap[id], heap[id / 2]);
+    id = id / 2;
+  }
+}
+```
+
+Dequeue minimum:
+
+1. Move the item in the rightmost leaf of the tree to the root ```cpp swap(heap[1], heap[size--])```
+2. Percolate down the recently moved item at the root to its proper place to restore heap property. For each subtree, if the root has a larger search key than either of its children, swap the item in the root with that of the smaller child.
+
+```cpp
+void minHeap::percolateDown(int id) {
+  for (j = 2 * id; j <= size; j = 2 * id) {
+    if (j < size && heap[j] > heap[j + 1]) {
+      j++;
+    }
+    if (heap[id] <= heap[j]) {
+      break;
+    }
+    swap(heap[id], heap[j]);
+    id = j;
+  }
+}
+```
+
+=== Initializing a Min Heap
+
+Idea: put the entries into a complete binary tree and run percolate down intelligently, which is also called *heapify*.
+
+Worst time complexity: $O(n)$
+
+Starting at the rightmost array position that has a child, percolate down all nodes in reverse level-order.
+
+```cpp
+MinHeap(const vector<int> &arr) : heap(arr) {
+  for (int i = (heap.size() / 2) - 1; i >= 0; i--) {
+    percolateDown(i);
+  }
+}
+```
+
+== Fibonacci Heap
+
+Time complexity comparison between: binary heap (worst case) and Fibonacci heap (amortized analysis).
+
+#table(
+  columns: 3,
+  align: (left, center, center),
+  [Operation], [ Binary Heap], [ Fibonacci Heap],
+  [insert], [ $Theta(log n)$], [ $Theta(1)$],
+  [extractMin], [ $Theta(log n)$], [ $O(log n)$],
+  [getMin], [ $Theta(1)$], [ $Theta(1)$],
+  [makeHeap], [ $Theta(1)$], [ $Theta(1)$],
+  [union], [ $Theta(n)$], [ $Theta(1)$],
+  [decreaseKey], [ $Theta(log n)$], [ $Theta(1)$],
+)
+
+=== Idea
+
+A Fibonacci heap is a collection of rooted trees, each as a min heap. However, the min heap here can have degree larger than 2.
+
+- Each node has
+  - a pointer to its parent
+  - a pointer to *one of its children*
+  - degree
+- Children are linked by circular, doubly linked list
+- Roots are also linked by circular, doubly linked list, which is called *root list*
+
+When we perform an `extractMin` operation, it will go through the entire root list and consolidate nodes to reduce the size of the root list. Overall idea: the operations on Fibonacci heaps *delay work as long as possible*.
+
+=== Operations
+
+==== Extract Minimum
+
+1. Remove min and concatenate its children into root list
+2. Consolidate the root list. Merge trees until every root in the root list has a distinct degree
+3. Link all the roots in array `A` together; update `H.min`
+
+Size of `A` is `D(n) + 1`, where `D(n)` is the maximum degree of any node in an `n`-node Fibonacci heap. $D(n) = floor(log_phi n)$ , where $phi = (1 + sqrt(5)) / 2 approx 1.618$
+
+```cpp
+void consolidate() {
+  int maxDegree = static_cast<int>(log2(numNodes)) + 1;
+  std::vector<FibonacciNode *> degreeTable(maxDegree, nullptr);
+
+  FibonacciNode *current = minNode;
+  std::vector<FibonacciNode *> toVisit;
+
+  do {
+    toVisit.push_back(current);
+    current = current->right;
+  } while (current != minNode);
+
+  for (FibonacciNode *node : toVisit) {
+    int degree = node->degree;
+    while (degreeTable[degree] != nullptr) {
+      FibonacciNode *sameDegreeNode = degreeTable[degree];
+      if (node->key > sameDegreeNode->key) {
+        std::swap(node, sameDegreeNode);
+      }
+      unionNodes(sameDegreeNode, node);
+      degreeTable[degree] = nullptr;
+      degree++;
+    }
+    degreeTable[degree] = node;
+  }
+
+  // Find minNode
+}
+```
+
+===== Amortized Analysis
+
+*TODO*
+
+==== Decrease Key
+
+If the min heap property is violated:
+
+1. Cut between the node and its parent
+2. Move the subtree to the root list
+3. Change `H.min` pointer if necessary
+4. If a node n not in the root list has lost a child for the second time, the subtree rooted at `n` should also be cut from `n`'s parent and move to the root list
+
+Purpose: This balancing through cascading cuts is essential for preserving the amortized time complexity of key Fibonacci heap operations, ensuring they stay efficient.
