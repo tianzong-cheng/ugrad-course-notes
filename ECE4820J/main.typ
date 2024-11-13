@@ -22,7 +22,7 @@
 
 == Processes
 
-- Process is the unit for resource management
+- *Process is the unit for resource management*
 - Multiprogramming issue: rate of computation of a process is not uniform / reproducible
 - Process hierarchies
   - UNIX
@@ -53,10 +53,13 @@
   5. Finish up the work for the interrupt
   6. Decides which process to run next
   7. Load the new process, i.e. memory map, registers, etc. (assembly)
+- Difference between concurrency and parallelism
+  - concurreny: multitasking on a single-core machine
+  - parallelism: multicore processor
 
 == Threads
 
-- A thread is the basic unit of CPU utilisation
+- *A thread is the basic unit of CPU utilisation*
 - Each thread has its own
   - thred ID
   - program counter
@@ -66,6 +69,8 @@
   - code
   - data
   - OS resources
+- In C or C++, if one thread crashes, it can cause the whole thread to crash.
+  - For example, if one thread crashes due to invalid memory access, it can corrupt the data in the shared memory, causing other threads to crash.
 
 == Implementation
 
@@ -80,12 +85,27 @@
   - Threads in user space - N:1
     - Multiple user-level threads are mapped to a single kenel thread
     - Scheduling and management are handled at the user level
-    - If one thread is blocked, the entire process is blocked
+    - Pros
+      - Fast because context switching in kernel level is reduced
+    - Cons
+      - If one thread is blocked, the entire process is blocked
+      - Time slices are allocated to processes, not threads. So each thread gets a smaller time slice.
   - Threads in kernel space - 1:1
     - Each user-level thread is mappend to a separate kernel thread
     - Improves responsiveness and parallelism
+    - Pros
+      - Blocking one thread does not affect other threads
+      - Processes with several threads get more CPU time
+    - Cons
+      - Bigger system cost
   - Hybrid threads - M:N
     - A threading library schedules user threads on available kernel threads
+    - Pros
+      - Combine the strengths of user-space threads and kenel-space threads
+    - Cons
+      - Complexity of implementation
+  - Remarks
+    - Hybrid threads are less common in modern OSes
 
 = Interprocess Communication
 
