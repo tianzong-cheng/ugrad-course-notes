@@ -261,9 +261,73 @@ Monitors are useful when several processes must complete before the next phase.
 
 == Requirements
 
+- When to decide what process to run next
+  - A new process is created
+  - A process exits or blocks
+  - IO interrupt from a device that has completed its task
+- Compute bound v.s. input-output bound
+- Two main strategies
+  - Preemptive
+    - Aprocessisrunforatmostnms
+    - If it is not completed by the end of the period then it is suspended
+  - Non-preemptive
+    - A process runs until it blocks or voluntarily releases the CPU
+    - It is resumed after an interrupt unless another process with higher priority is in the queue
+- Goals when scheduling
+  - All systems
+    - Fairness: fair share of the CPU for each process
+    - Balance: all parts of the system are busy
+    - Policy enforcement: follow the defined policy
+  - Interactive systems
+    - Response time: quickly process requests
+    - Proportionality: meet user's expectations
+  - Batch systems
+    - Throughput: maximise the number of jobs per hour
+    - Turnaround time: minimise the time between submission and termination of a job
+    - CPU utilisation: keep the CPU as busy as possible
+  - Real-time systems
+    - Meet deadlines: avoid any data loss
+    - Predictability: avoid quality degradation, e.g. for multimedia
+
 == Common Scheduling Algorithms
 
+- Simplest algorithm but non-preemptive:
+  - CPU is assigned in the order it is requested
+  - Processes are not interrupted, they can run a long as they want
+  - New jobs are put at the end of the queue
+  - When a process blocks the next in line is run
+  - Any blocked process becoming ready is pushed to the queue
+- Shortest job first (SJF)
+  - non-preemtive
+  - Minimizes turnaround time
+- Round-Robin scheduling
+  - preemtive
+  - A process runs until
+    - Getting blocked
+    - Its quantum has elapsed
+    - Being completed
+- Priority scheduling
+  - Processes are more or less important, e.g. printing
+  - Creates priority classes
+  - Use Round-Robin within a class
+  - Run higher priority processes first
+- Lottery scheduling
+  - preemtive
+  - Processes get lottery tickets
+  - When a scheduling decision is made a random ticket is chosen
+  - Prize for the winner is to access resources
+  - High priority processes get more tickets
+- Eariliest deadline first
+  - preemtive
+  - Process needs to announce (i) its presence and (ii) its deadline
+  - Scheduler orders processes with respect to their deadline
+  - First process in the list (earliest deadline) is run
+
 == Notes and Problems
+
+- Limitations of the previous algorithms
+  - They all assume that processes are competing
+  - Parent could know which of its children is most important
 
 Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A1 A2 A3` are threads of process `A`). Note that the kernel is not aware of the status of the threads in this case.
 
