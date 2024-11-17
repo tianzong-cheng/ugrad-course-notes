@@ -46,6 +46,16 @@
     - Cons
       - Performance overhead
 
+== Key Points
+
+- What is the main job of an OS?
+- Why are there so many types of OS?
+- Why is hardware important when writing an OS?
+- What are the main components of an OS?
+- What are system calls?
+  - switch to kernel mode to run privileged instruction
+  - software  interrupt
+
 = Processes and Threads
 
 == Processes
@@ -63,7 +73,7 @@
 - A simple model for processes:
   - A process is a data structure called process control block
   - The structure contains important information such as:
-    - State
+    - *State*
       - ready (input available)
       - running (picked by scheduler)
       - blocked (waiting for input)
@@ -134,6 +144,14 @@
       - Complexity of implementation
   - Remarks
     - Hybrid threads are less common in modern OSes
+
+== Key Points
+
+- What is a process?
+- How can processes be created and terminated?
+- What are the possible states of a process?
+- What is the difference between single thread and multi-threads?
+- What approaches can be taken to handle threads?
 
 = Interprocess Communication
 
@@ -272,7 +290,7 @@ void *cons() {
 }
 ```
 
-== More Solutions
+== More Solutions (TODO)
 
 === Monitors
 
@@ -283,7 +301,13 @@ Basic idea behind monitors:
 - A monitor can be seen as a “special type of class”
 - Processes can be blocked and awaken *based on condition variables and wait and signal functions*
 
-Monitors are useful when several processes must complete before the next phase.
+== Key Points
+
+- Why is thread communication essential?
+- What is a critical region?
+- Do software solutions exist?
+- What is an atomic operation?
+- What are the two best and most common solutions?
 
 = Scheduling
 
@@ -351,7 +375,7 @@ Monitors are useful when several processes must complete before the next phase.
   - Scheduler orders processes with respect to their deadline
   - First process in the list (earliest deadline) is run
 
-== Notes and Problems
+== Notes and Problems (TODO)
 
 - Limitations of the previous algorithms
   - They all assume that processes are competing
@@ -365,8 +389,13 @@ What is the purpose of the semaphore?
 
 = Deadlocks
 
+== Modelling the Problem
+
 - Preemptable and non-preemptable
   - preemptable: resource can be taken away from a process without causing any negative impact
+
+== Dealing with the Problem
+
 - Strategies to recover from a deadlock
   - Preemption
     - Take a resource from another process
@@ -375,10 +404,17 @@ What is the purpose of the semaphore?
   - Rollback
     - Set periodical checkpoints on processes
     - Restart process at a checkpoint from before the deadlock
+
+== Avoiding the Problem
+
 - States
-  - Safe state: there exists an order allowing all processes to complete, even if they request their maximum number of resources when sched- uled. It can guarantee that all processes can finish.
+  - Safe state: *there exists an order allowing all processes to complete*, even if they request their maximum number of resources when scheduled. It can guarantee that all processes can finish.
   - Unsafe state: the ability of the system not to deadlock depends on the order the resources are allocated and deallocated. There is no way to predict whether or not all the processes will finish.
   - An unsafe state does not necessarily imply a deadlock; the system can still run for a while, or even complete all processes if some release their resources before requesting some more.
+- The Banker's Algorithm
+  1. *Select a row in $R$ whose resource request can be met.* If no such row exists there is a possibility for a deadlock
+  2. When the process terminates it releases all its resources, and they can be added to the vector $A$
+  3. If all the processes terminate when repeating steps 1. and 2. then the sate is safe. If step 1. fails at any stage (not all the processes being finished) then the state is unsafe and the request should be denied
 - *Conditions*
   - Mutual exclusion
     - Use daemon that can handle specific output, e.g. SPOOL
@@ -392,8 +428,8 @@ What is the purpose of the semaphore?
     - Often impossible to do anything
   - *Circular wait*
     - Order the resources
-    - Processes have to request resources in increasing order
-    - A process can only request a lower resource if it has released all the larger ones
+    - *Processes have to request resources in increasing order*
+    - *A process can only request a lower resource if it has released all the larger ones*
     - *Best solution* but not always possible
 
 = Labs
@@ -416,8 +452,21 @@ What is the purpose of the semaphore?
 
 == Lab 2
 
+- Compilation of Linux kernel
+  - Copy old config
+  - Tweak new config
+  - `make` and `make install`
+
 == Lab 3
 
+- `diff` and `patch`
+  - ```bash diff -u original_file modified_file > changes.patch```
+  - ```bash patch < changes.patch```
+- `rsync`
+  - ```bash rsync -avz /source/directory/ user@remote:/destination/directory/```
+    - `-a` archive mode
+    - `-v` verbose
+    - `-z` compress data during transfer
 - Regular Expression
   - `abc…`	Letters
   - `123…`	Digits
@@ -488,3 +537,40 @@ What is the purpose of the semaphore?
   2. BIOS looks for a bootable device.
   3. BIOS hands over the booting process to the found bootloader.
   4. Bootloader loads the system kernel into memory.
+
+```bash
+sudo useradd username
+lscpu && free -h
+xxd file3  # hex dump
+grep -rlw "nest_lock" --include-"*mutex"
+```
+
+== Homework 2
+
+- ```bash man 2 open```: system calls are in section 2
+- ```bash man 3 printf```: library calls are in section 3
+- `strace` `ltrace`
+- ```bash strace -p <pid>``` helps pinpointing where the process is stuck in loops
+- `printk()` prints to the kernel log
+- `SYSCALL_DEFINE0` defines a system call with no arguments, while `SYSCALL_DEFINEx` defines a system call with x arguments.
+
+== Homework 3
+
+- If a multithreaded process forks, a problem occurs if the child gets copies of all the parent's threads. Suppose that one of the original threads was waiting for keyboard input. Now two threads are waiting for keyboard input, one in each process. Does this problem ever occur in single-threaded processes?
+  - TODO
+- POSIX: Portable Operating System Interface
+  - Ensure that software developed for one POSIX-compliant system can run on others
+
+== Homework 4
+
+- `semaphore.h`
+  - `sem_init()`
+  - `sem_wait()`
+    - `sem_trywait()`
+  - `sem_post()`
+  - `sem_destroy()`
+
+== Homework 5
+
+- A system has two processes and three identical resources. Each process needs a maximum of two resources. Can a deadlock occur?
+  - No. A process can apply for the third resource.
