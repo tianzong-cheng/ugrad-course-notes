@@ -14,9 +14,37 @@
 
 == Computers and Operating Systems
 
+- Job of an Operating System (OS):
+  - Manage and assign the hardware resources
+  - Hide complicated details to the end user
+  - Provide abstractions to ease interactions with the hardware
+
 == Hardware
 
+- CMOS: save time and date, BIOS parameters
+  - powered by the CMOS battery
+
 == Basic concepts
+
+- Five major components of an OS:
+  - System calls: allows to interface with user-space
+  - Processes: defines everything needed to run programs
+  - File system: store persistent data
+  - Input-Output (IO): allows to interface with hardware
+  - Protection and Security: keep the system safe
+- Monolithic kernel, micro kernel
+  - Monolithic kernel
+    - Everything in kernel space
+    - Pros
+      - High performance: communication between kernel components avoid overhead
+    - Cons
+      - Changes or bugs can affect the whole kernel
+  - Micro kernel
+    - Minimal kernel space
+    - Pros
+      - Higher stabability
+    - Cons
+      - Performance overhead
 
 = Processes and Threads
 
@@ -334,3 +362,129 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
 === Dining Philosophers Problem
 
 What is the purpose of the semaphore?
+
+= Deadlocks
+
+- Preemptable and non-preemptable
+  - preemptable: resource can be taken away from a process without causing any negative impact
+- Strategies to recover from a deadlock
+  - Preemption
+    - Take a resource from another process
+  - Killing
+    - Pick a process that can be re-run from the beginning
+  - Rollback
+    - Set periodical checkpoints on processes
+    - Restart process at a checkpoint from before the deadlock
+- States
+  - Safe state: there exists an order allowing all processes to complete, even if they request their maximum number of resources when sched- uled. It can guarantee that all processes can finish.
+  - Unsafe state: the ability of the system not to deadlock depends on the order the resources are allocated and deallocated. There is no way to predict whether or not all the processes will finish.
+  - An unsafe state does not necessarily imply a deadlock; the system can still run for a while, or even complete all processes if some release their resources before requesting some more.
+- *Conditions*
+  - Mutual exclusion
+    - Use daemon that can handle specific output, e.g. SPOOL
+    - Aside from carefully assigning resources not much can be done
+  - Hold and wait
+    - Require processes to claim all the resources at once
+    - Not realistic, not optimal
+    - Alternative strategy: process has to release its resources before getting new ones
+  - No preemption: resources cannot be taken away by another process
+    - Issue inherent to the hardware
+    - Often impossible to do anything
+  - *Circular wait*
+    - Order the resources
+    - Processes have to request resources in increasing order
+    - A process can only request a lower resource if it has released all the larger ones
+    - *Best solution* but not always possible
+
+= Labs
+
+== Lab 1
+
+- `grep -rl` prints the filenames with a match, while `grep -r` also prints the line with the match.
+- Use regular expression with `grep -E`.
+- `find /etc -type f -name '*netw*'`
+- File descriptors
+  - 0: Standard input
+  - 1: Standard output
+  - 2: Standard error
+- `>&1` redirects the output to standard output. `2>&1 >` first redirects standard error to standard output and then redirects to a file.
+- `$`
+  - `$0` is the name of the script.
+  - `$1` is the first argument passed to the shell. 
+  - `$?` is the exit status of the last executed command. For example, 0 is success.
+  - `$!` holds the process ID of the last background command.
+
+== Lab 2
+
+== Lab 3
+
+- Regular Expression
+  - `abc…`	Letters
+  - `123…`	Digits
+  - `\d`	Any Digit
+  - `\D`	Any Non-digit character
+  - `.`	Any Character
+  - `\.`	Period
+  - `[abc]`	Only a, b, or c
+  - `[^abc]`	Not a, b, nor c
+  - `[a-z]`	Characters a to z
+  - `[0-9]`	Numbers 0 to 9
+  - `\w`	Any Alphanumeric character
+  - `\W`	Any Non-alphanumeric character
+  - `{m}`	m Repetitions
+  - `{m,n}`	m to n Repetitions
+  - `*`	Zero or more repetitions
+  - `+`	One or more repetitions
+  - `?`	Optional character
+  - `\s`	Any Whitespace
+  - `\S`	Any Non-whitespace character
+  - `^…$`	Starts and ends
+  - `(…)`	Capture Group
+  - `(a(bc))`	Capture Sub-group
+  - `(.*)`	Capture all
+  - `(abc|def)`	Matches abc or def
+
+== Lab 4
+
+- ```bash gcc -g -o sum sum.c```
+- ```bash gdb --args ./sum 1 2```
+- `step` `s` can debug inside a function call
+- `next` `n` skips over function calls without diving into their details
+- `tui enable`
+- `print` `p`
+- `break` `b`
+
+== Lab 5
+
+- Stages of compilation
+  1. Pre-processing
+  2. Compilation
+  3. Assembly
+  4. Linking
+- Static libraries
+  - ```bash gcc -c list.c -o list.o```
+    - `-c` to compile and assemble, but do not link
+  - ```bash ar rcs list.a list.o```: create an archive from the object
+  - ```bash gcc -o ex2_cli ex2_cli.c -L. -l:list.a -l:middleware.a```
+    - `-L.`: Adds the current directory to the list of directories where GCC will look for libraries
+    - `-l:`: Specify the exact name of the library file
+- Dynamic libraries
+  - ```bash gcc -c *.c -fpic```
+    - `-fpic`: Generates position-independent code (PIC).
+  - ```bash gcc -shared list.o -o list.so```
+  - ```bash gcc -o ex2_cli ex2_cli.o list.so middleware.so```
+  - ```bash set -x LD_LIBRARY_PATH ./ $LD_LIBRARY_PATH```: appends the current directory
+
+== Lab 6
+
+== Lab 7
+
+= Homework
+
+== Homework 1
+
+- Booting
+  1. The computer first runs a power-on self test which ensures the basic functions of the computer is running correctly.
+  2. BIOS looks for a bootable device.
+  3. BIOS hands over the booting process to the found bootloader.
+  4. Bootloader loads the system kernel into memory.
