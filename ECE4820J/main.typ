@@ -10,6 +10,8 @@
   listing-index: (enabled: true)
 )
 
+#show raw: set text(font: "JetBrainsMonoNL NFM")
+
 = Operating Systems Overview
 
 == Computers and Operating Systems
@@ -99,7 +101,7 @@
 
 - *A thread is the basic unit of CPU utilisation*
 - Each thread has its own
-  - thred ID
+  - thread ID
   - program counter
   - *registers*
   - *stack*
@@ -209,9 +211,12 @@ void leave_region(int p) {
 }
 ```
 
+Peterson's idea only supports two processes and relies on busy waiting.
+
 === Mutual Exclusion at Hardware Level
 
 - Disabling interrupts
+  - Only available when there is only one CPU
 - Use atomic operations
   - Test and set lock `TSL`
 
@@ -268,8 +273,9 @@ int buf = 0;
 void *prod() {
   for (int i = 1; i < MAX; i++) {
     pthread_mutex_lock(&m);
-    while (buf != 0)
+    while (buf != 0) {
       pthread_cond_wait(&cp, &m);
+    }
     buf = 1;
     pthread_cond_signal(&cc);
     pthread_mutex_unlock(&m);
@@ -280,8 +286,9 @@ void *prod() {
 void *cons() {
   for (int i = 1; i < MAX; i++) {
     pthread_mutex_lock(&m);
-    while (buf == 0)
+    while (buf == 0) {
       pthread_cond_wait(&cc, &m);
+    }
     buf = 0;
     pthread_cond_signal(&cp);
     pthread_mutex_unlock(&m);
@@ -289,6 +296,15 @@ void *cons() {
   pthread_exit(0);
 }
 ```
+
+The `pthread_cond_wait()` function atomically blocks the current thread waiting on the condition variable specified by `cond`, and releases the mutex specified by `mutex`.  The waiting thread unblocks only after another thread calls `pthread_cond_signal`, or `pthread_cond_broadcast` with the same condition variable, and the current thread reacquires the lock on `mutex`.
+
+*Remarks*: Mutexes and semaphores are different
+- Purposes
+  - Semaphore is designed for synchronization
+- Usage
+  - Mutex can only be release by the owner
+  - Semaphore can be controlled by any process
 
 == More Solutions (TODO)
 
@@ -320,7 +336,7 @@ Basic idea behind monitors:
 - Compute bound v.s. input-output bound
 - Two main strategies
   - Preemptive
-    - Aprocessisrunforatmostnms
+    - A process is run for at most n ms
     - If it is not completed by the end of the period then it is suspended
   - Non-preemptive
     - A process runs until it blocks or voluntarily releases the CPU
@@ -375,7 +391,7 @@ Basic idea behind monitors:
   - Scheduler orders processes with respect to their deadline
   - First process in the list (earliest deadline) is run
 
-== Notes and Problems (TODO)
+== Notes and Problems
 
 - Limitations of the previous algorithms
   - They all assume that processes are competing
@@ -383,9 +399,14 @@ Basic idea behind monitors:
 
 Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A1 A2 A3` are threads of process `A`). Note that the kernel is not aware of the status of the threads in this case.
 
-=== Dining Philosophers Problem
+== Key Points
 
-What is the purpose of the semaphore?
+- Why is scheduling the lowest part of the OS?
+- What are the two main types of algorithm?
+- What are the two most common scheduling algorithms?
+  - First-come, first-served
+  - Round Robin
+- Give an example of theoretical problem related to scheduling
 
 = Deadlocks
 
@@ -416,14 +437,14 @@ What is the purpose of the semaphore?
   2. When the process terminates it releases all its resources, and they can be added to the vector $A$
   3. If all the processes terminate when repeating steps 1. and 2. then the sate is safe. If step 1. fails at any stage (not all the processes being finished) then the state is unsafe and the request should be denied
 - *Conditions*
-  - Mutual exclusion
+  - *Mutual exclusion*
     - Use daemon that can handle specific output, e.g. SPOOL
     - Aside from carefully assigning resources not much can be done
-  - Hold and wait
+  - *Hold and wait*
     - Require processes to claim all the resources at once
     - Not realistic, not optimal
     - Alternative strategy: process has to release its resources before getting new ones
-  - No preemption: resources cannot be taken away by another process
+  - *No preemption*: resources cannot be taken away by another process
     - Issue inherent to the hardware
     - Often impossible to do anything
   - *Circular wait*
@@ -431,6 +452,18 @@ What is the purpose of the semaphore?
     - *Processes have to request resources in increasing order*
     - *A process can only request a lower resource if it has released all the larger ones*
     - *Best solution* but not always possible
+
+== Key Points
+
+- How to detect deadlocks?
+  - Resource allocation graph: detect cycles
+  - Timeout
+- How to fix a deadlock in a clean way?
+- What are the four conditions that characterise a deadlock?
+- What is a common practice regarding deadlocks?
+  - Preemption
+  - Killing
+  - Rollback
 
 = Labs
 
@@ -467,7 +500,7 @@ What is the purpose of the semaphore?
     - `-a` archive mode
     - `-v` verbose
     - `-z` compress data during transfer
-- Regular Expression
+- Regular Expression (Note that some of these are non-POSIX)
   - `abc…`	Letters
   - `123…`	Digits
   - `\d`	Any Digit
@@ -492,6 +525,8 @@ What is the purpose of the semaphore?
   - `(a(bc))`	Capture Sub-group
   - `(.*)`	Capture all
   - `(abc|def)`	Matches abc or def
+  - ```bash echo "I like apple" | sed 's/apple/orange/'```
+  - ```bash echo -e "5 apple\n15 banana" | awk '$1 > 10' ```
 
 == Lab 4
 
@@ -557,7 +592,7 @@ grep -rlw "nest_lock" --include-"*mutex"
 == Homework 3
 
 - If a multithreaded process forks, a problem occurs if the child gets copies of all the parent's threads. Suppose that one of the original threads was waiting for keyboard input. Now two threads are waiting for keyboard input, one in each process. Does this problem ever occur in single-threaded processes?
-  - TODO
+  - The single-thread process doesn't even have a chance to fork because it is blocked when waiting for input.
 - POSIX: Portable Operating System Interface
   - Ensure that software developed for one POSIX-compliant system can run on others
 
@@ -574,3 +609,28 @@ grep -rlw "nest_lock" --include-"*mutex"
 
 - A system has two processes and three identical resources. Each process needs a maximum of two resources. Can a deadlock occur?
   - No. A process can apply for the third resource.
+
+= Mid-Term
+
+- What's the difference between user space and kernel space?
+- What's the difference between stacks and heaps?
+- What are the possible states of a process?
+- What's an orphan process? What about zombie process?
+  - Orphan Process: Parent has terminated; the system adopts it (init process in Linux).
+  - Zombie Process: Finished execution but not yet removed from the process table.
+- Can processes ignore signals?
+  - Yes, for most signals. But some (like SIGKILL and SIGSTOP) cannot be ignored.
+- List some common scheduling algorithms.
+- Talk about context change.
+- What are the primary means of inter-process communication (IPC)?
+  - Pipes
+  - Message Queues
+  - Shared Memory
+  - Semaphores
+  - Sockets
+- What are the differences between processes, threads and coroutines?
+  - Processes: Independent units with their own memory space.
+  - Threads: Share memory within a process but have independent execution paths.
+  - Coroutines: Cooperative routines within a thread, controlled by the programmer.
+- What are the prerequisites for a deadlock to happen?
+- How to prevent deadlocks?
