@@ -44,7 +44,7 @@
   - Micro kernel
     - Minimal kernel space
     - Pros
-      - Higher stabability
+      - Higher stability
     - Cons
       - Performance overhead
 
@@ -94,7 +94,7 @@
   6. Decides which process to run next
   7. Load the new process, i.e. memory map, registers, etc. (assembly)
 - Difference between concurrency and parallelism
-  - concurreny: multitasking on a single-core machine
+  - concurrency: multitasking on a single-core machine
   - parallelism: multicore processor
 
 == Threads
@@ -123,7 +123,7 @@
   - ```c int pthread_attr_destroy(pthread_attr_t *attr)```
 - Threading models
   - Threads in user space - N:1
-    - Multiple user-level threads are mapped to a single kenel thread
+    - Multiple user-level threads are mapped to a single kernel thread
     - Scheduling and management are handled at the user level
     - Pros
       - Fast because context switching in kernel level is reduced
@@ -131,7 +131,7 @@
       - If one thread is blocked, the entire process is blocked
       - Time slices are allocated to processes, not threads. So each thread gets a smaller time slice.
   - Threads in kernel space - 1:1
-    - Each user-level thread is mappend to a separate kernel thread
+    - Each user-level thread is mapped to a separate kernel thread
     - Improves responsiveness and parallelism
     - Pros
       - Blocking one thread does not affect other threads
@@ -350,9 +350,9 @@ Basic idea behind monitors:
     - Response time: quickly process requests
     - Proportionality: meet user's expectations
   - Batch systems
-    - Throughput: maximise the number of jobs per hour
-    - Turnaround time: minimise the time between submission and termination of a job
-    - CPU utilisation: keep the CPU as busy as possible
+    - Throughput: maximize the number of jobs per hour
+    - Turnaround time: minimize the time between submission and termination of a job
+    - CPU utilization: keep the CPU as busy as possible
   - Real-time systems
     - Meet deadlines: avoid any data loss
     - Predictability: avoid quality degradation, e.g. for multimedia
@@ -380,13 +380,13 @@ Basic idea behind monitors:
   - Use Round-Robin within a class
   - Run higher priority processes first
 - Lottery scheduling
-  - preemtive
+  - preemptive
   - Processes get lottery tickets
   - When a scheduling decision is made a random ticket is chosen
   - Prize for the winner is to access resources
   - High priority processes get more tickets
-- Eariliest deadline first
-  - preemtive
+- Earliest deadline first
+  - preemptive
   - Process needs to announce (i) its presence and (ii) its deadline
   - Scheduler orders processes with respect to their deadline
   - First process in the list (earliest deadline) is run
@@ -459,11 +459,52 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
   - Resource allocation graph: detect cycles
   - Timeout
 - How to fix a deadlock in a clean way?
-- What are the four conditions that characterise a deadlock?
+- What are the four conditions that characterize a deadlock?
 - What is a common practice regarding deadlocks?
   - Preemption
   - Killing
   - Rollback
+
+= Memory Management
+
+== Handling Memory
+
+- Simplest model (No memory abstraction)
+  - Program sees the actual physical memory
+  - Programmers can access the whole memory
+  - Limitations when running more than one program
+    - Have to copy the whole content of the memory into a file when switching program
+    - No more than one program in the memory at a time
+    - More than one program is possible if using special hardware
+- Address space:
+  - Set of addresses that a process can use
+  - Independent from other processes' memory
+- More memory than available might be needed
+  - Processes are swapped in (out) from (to) the disk
+  - OS has to manage dynamically assigned memory
+- Ways to assign memory to processes
+  - First fit: search for a hole big enough and use the first found
+  - Best fit: search whole list and use smallest, big enough hole
+  - Quick fit: maintain lists for common memory sizes, use the best
+- Virtual memory
+  - Generalization of the base and limit registers
+  - Each process has its own address space
+  - The address space is split into chunks called pages
+  - Each page corresponds to a range of addresses
+  - Pages are mapped onto physical memory
+  - Pages can be on different medium, e.g. RAM and swap
+- Swap partition principles
+  - When a process starts, its swap area is reserved and initialized
+  - The new “origin” is computed
+  - When a process terminates its swap area is freed
+  - The swap is handled as a list of free chunks
+- Two main strategies:
+  - Copy the whole process image to the swap area
+  - Allocate swap disk space on the fly
+
+== Paging
+
+== Segmentation
 
 = Labs
 
