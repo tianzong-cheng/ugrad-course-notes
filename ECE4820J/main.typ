@@ -7,7 +7,7 @@
   author: "Tianzong Cheng",
   figure-index: (enabled: true),
   table-index: (enabled: true),
-  listing-index: (enabled: true)
+  listing-index: (enabled: true),
 )
 
 #show raw: set text(font: "JetBrainsMonoNL NFM")
@@ -56,7 +56,7 @@
 - What are the main components of an OS?
 - What are system calls?
   - switch to kernel mode to run privileged instruction
-  - software  interrupt
+  - software interrupt
 
 = Processes and Threads
 
@@ -297,7 +297,7 @@ void *cons() {
 }
 ```
 
-The `pthread_cond_wait()` function atomically blocks the current thread waiting on the condition variable specified by `cond`, and releases the mutex specified by `mutex`.  The waiting thread unblocks only after another thread calls `pthread_cond_signal`, or `pthread_cond_broadcast` with the same condition variable, and the current thread reacquires the lock on `mutex`.
+The `pthread_cond_wait()` function atomically blocks the current thread waiting on the condition variable specified by `cond`, and releases the mutex specified by `mutex`. The waiting thread unblocks only after another thread calls `pthread_cond_signal`, or `pthread_cond_broadcast` with the same condition variable, and the current thread reacquires the lock on `mutex`.
 
 *Remarks*: Mutexes and semaphores are different
 - Purposes
@@ -476,6 +476,9 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
     - Have to copy the whole content of the memory into a file when switching program
     - No more than one program in the memory at a time
     - More than one program is possible if using special hardware
+  - Problems
+    - Protection: prevent program from accessing other's memory
+    - Relocation: rewrite address to allocate personal memory
 - Address space:
   - Set of addresses that a process can use
   - Independent from other processes' memory
@@ -504,7 +507,89 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
 
 == Paging
 
+- Structure of a page entry:
+  - Present|absent: 1|0; missing causes a page fault
+  - Protection: 1 to 3 bits: reading/writing/executing
+  - Modified: 1|0 = dirty|clean; page was modified and needs to be updated on the disk
+  - Referenced: bit used to keep track of most used pages; useful in case of a page fault
+  - Caching: important for pages that map to registers; do not want to use old copy so set caching to 0
+- Page replacement: Least Recently Used
+  - Hardware solution, for $n$ page frames:
+  - Initialize a binary $n times n$ matrix to 0
+  - When frame $k$ is used, set row $k$ to 1 and column $k$ to 0
+  - Replace the page with the smallest value
+  - Example on slides, page 179
+- Page replacement: Aging
+  - Shift all the counters by 1 bit to the right
+  - Add $2^(n-1) dot R$ to the counter
+  - Difference from LRU: considers a period of time
+- Thrashing: real storage resources are overcommitted, leading to a constant state of page fault
+- Page replacement: WSClock
+  - If reference bit is 1, set to 0
+  - If reference bit is 0 and age is bigger than some constant
+    - Clean: replace page
+    - Dirty: schedule write, repeat algorithm
+- Local v.s. global
+  - Local: process only use the allocated portion
+  - Global: dynamically allocate page frames to a process
+- Adjust page frames allocation based on *page fault frequency*
+  - If larger than $A$ then allocate more page frames
+  - If below $B$ then free some page frames
+- Page size
+  - Optimal page size: $p=sqrt(2 s e)$, where $s$ is process size and $e$ is average size for page entry
+  - Common page frame sizes: 4KB, 8KB
+- Page sharing
+  - Pages containing the program can be shared
+  - On a process switch do not remove all pages if required by another process: would generate many page fault
+  - When a process terminates do not free all the memory if it is required by another process: would generate a crash
+- Process on a page fault:
+  1. Trap to the kernel is issued; program counter is saved on the stack; state of current instruction saved on some specific registers
+  2. *Assembly code routine* started: save general registers and other volatile information
+  3. OS search which page is requested
+  4. Once the page is found: *check if the address is valid* and if process is allowed to access the page. If not kill the process; otherwise find a free page frame
+  5. If selected frame is dirty: have a context switch (faulting process is suspended) until disk transfer has completed. The page frame is marked as reserved such as not to be used by another process
+  6. When page frame is clean: schedule disk write to swap in the page. In the meantime the faulting process is suspended and other processes can be scheduled
+  7. When *receiving a disk interrupt to indicate copy is done*: page table is updated and frame is marked as being in a normal state
+  8. Rewind program to the faulting instruction, program counter reset to this value
+  9. Faulting process scheduled
+  10. Assembly code routine starts: reload registers and other volatile information
+  11. Process execution can continue
+- Policy and mechanism
+  - Low level MMU handler: architecture dependent
+  - Page fault handler: kernel space
+  - External handler: user space
+- Page replacement algorithm in kernel space
+  - Fault handler sends all information to external pager (which page was selected for removal)
+  - External pager writes the page to the disk
+  - No overhead, faster
+
 == Segmentation
+
+- Segmentation: Divides memory into variable-sized segments based on the logical structure of the program, such as code, data, stack, etc.
+- The size of each segment is variable
+- External fragmentation v.s. internal fragmentation
+  - Internal: Occurs if a page is not completely filled
+  - External: Happens when free memory is divided into non-contiguous chunks.
+- Modern systems combine paging and segmentation
+
+== Key Points
+
+- What are the two main ways to model memory?
+- What is the swap area?
+- Cite two main page replacement algorithms
+- Discuss the differences between paging and segmentation
+- Explain external and internal fragmentation
+
+= Input-Output
+
+== Basic Hardware
+
+== Hardware Interrupts
+
+== Software IO
+
+#set heading(numbering: "A.1.1", supplement: [Appendix])
+#counter(heading).update(0)
 
 = Labs
 
@@ -520,7 +605,7 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
 - `>&1` redirects the output to standard output. `2>&1 >` first redirects standard error to standard output and then redirects to a file.
 - `$`
   - `$0` is the name of the script.
-  - `$1` is the first argument passed to the shell. 
+  - `$1` is the first argument passed to the shell.
   - `$?` is the exit status of the last executed command. For example, 0 is success.
   - `$!` holds the process ID of the last background command.
 
@@ -542,30 +627,30 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
     - `-v` verbose
     - `-z` compress data during transfer
 - Regular Expression (Note that some of these are non-POSIX)
-  - `abc…`	Letters
-  - `123…`	Digits
-  - `\d`	Any Digit
-  - `\D`	Any Non-digit character
-  - `.`	Any Character
-  - `\.`	Period
-  - `[abc]`	Only a, b, or c
-  - `[^abc]`	Not a, b, nor c
-  - `[a-z]`	Characters a to z
-  - `[0-9]`	Numbers 0 to 9
-  - `\w`	Any Alphanumeric character
-  - `\W`	Any Non-alphanumeric character
-  - `{m}`	m Repetitions
-  - `{m,n}`	m to n Repetitions
-  - `*`	Zero or more repetitions
-  - `+`	One or more repetitions
-  - `?`	Optional character
-  - `\s`	Any Whitespace
-  - `\S`	Any Non-whitespace character
-  - `^…$`	Starts and ends
-  - `(…)`	Capture Group
-  - `(a(bc))`	Capture Sub-group
-  - `(.*)`	Capture all
-  - `(abc|def)`	Matches abc or def
+  - `abc…` Letters
+  - `123…` Digits
+  - `\d` Any Digit
+  - `\D` Any Non-digit character
+  - `.` Any Character
+  - `\.` Period
+  - `[abc]` Only a, b, or c
+  - `[^abc]` Not a, b, nor c
+  - `[a-z]` Characters a to z
+  - `[0-9]` Numbers 0 to 9
+  - `\w` Any Alphanumeric character
+  - `\W` Any Non-alphanumeric character
+  - `{m}` m Repetitions
+  - `{m,n}` m to n Repetitions
+  - `*` Zero or more repetitions
+  - `+` One or more repetitions
+  - `?` Optional character
+  - `\s` Any Whitespace
+  - `\S` Any Non-whitespace character
+  - `^…$` Starts and ends
+  - `(…)` Capture Group
+  - `(a(bc))` Capture Sub-group
+  - `(.*)` Capture all
+  - `(abc|def)` Matches abc or def
   - ```bash echo "I like apple" | sed 's/apple/orange/'```
   - ```bash echo -e "5 apple\n15 banana" | awk '$1 > 10' ```
 
