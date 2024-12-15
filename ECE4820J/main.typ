@@ -584,9 +584,78 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
 
 == Basic Hardware
 
+- Categories
+  - Block devices:
+    - Stores information in blocks of fixed size
+    - Can *directly access* any block independently of other ones
+  - Character devices:
+    - Delivers or accepts a stream of characters
+    - *Not addressable*, no block structure
+- Memory-mapped IO
+  - Modern approach:
+    - Map the buffer to a memory address
+    - Map each register to a unique memory address or IO port
+  - Strengths:
+    - Access memory not hardware: no need for assembly
+    - No special protection required: control register address space not included in the virtual address space
+    - Flexible: a specific user can be given access to a particular device
+    - Different drivers in different address spaces: reduces kernel size and does not incur any interference between drivers
+  - Since memory words are cached what if the content of a control register is cached?
+    - MMIO regions are typically mapped with specific flags indicating they are non-cacheable
+- DMA
+  - TODO
+
 == Hardware Interrupts
 
+- *Precise interrupt*
+  - Program counter represents the precise progress
+  - All instructions before PC have been completed
+  - No instruction after the one pointed by PC have be executed
+  - Execution state of the instruction pointed by PC is known
+- Difficult to figure out what happened and what has to happen:
+  - Instructions near PC are in different stages of completion
+  - General state can be recovered if given many details
+  - Code to resume process is complex
+  - The more details the more memory used
+- Imprecise interrupts are slow to process, what is an optimal strategy? (TODO)
+
 == Software IO
+
+- Three communications strategies:
+  - Programmed IO:
+    - Copy data into kernel space
+    - Fill up device register and wait in tight loop until register is empty
+    - Fill up, wait, fill up, wait, etc.
+  - Interrupt IO:
+    - Copy data into kernel space, then fill up device register
+    - The current process is blocked, the scheduler is called to let another process run
+    - When the register is empty an interrupt is sent, the new current process is stopped
+    - Filled up, block, resume, fill up, block, etc.
+  - DMA: similar to programmed IO, but DMA does all the work.
+- Main goals on the design of IO software:
+  - Device independence: whatever the support, files are handled the same way
+  - Uniform naming: devices organized by type with a name composed of string and number
+  - *Error handling: fix error at lowest level possible*
+  - Synchronous vs. asynchronous: OS decides if interrupt driven operations look blocking to user programs
+  - Buffer: need some temporary space to store data
+- Basic plugin design strategy:
+  - Similar devices have a common basic set of functionalities
+  - OS defines which functionalities should be implemented
+  - Use a table of function pointers to interface device driver with the rest of the OS
+  - Uniform naming at user level
+
+#figure(
+  image("images/IO_layers.png", width: 80%),
+  caption: [Software IO layers],
+)
+
+== Key Points
+
+- What are the two main categories of devices?
+- Explain the difference between precise and imprecise interrupts
+- List three communication strategies
+- Why should implementation be done using layers?
+- What is a plugin architecture and why is it so important?
 
 #set heading(numbering: "A.1.1", supplement: [Appendix])
 #counter(heading).update(0)
