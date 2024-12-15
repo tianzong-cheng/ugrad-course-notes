@@ -730,6 +730,95 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
 - Explain the structure of an inode
 - Mention three challenges in the design of a file system
 
+= Security
+
+== Basics on Security
+
+- Categories:
+  - Data stolen: confidentiality
+  - Data changed: integrity
+  - Intrusion: exclusion of outsiders
+  - Denial of service: system availability
+
+== Basics on Cryptography
+
+- Two basic encryption strategies:
+  - Symmetric: same key used to encrypt an decrypt
+  - Asymmetric: many can encrypt but only one can decrypt
+- In an OS setup:
+  - Symmetric protocols best fit confidentiality
+  - Asymmetric protocols best fit authentication
+- Hash to check whether data has been changed
+- Prove that a user is really who he pretends to be
+  - Secret: something the user knows
+  - Token: something the user has
+  - Challenge-response: the user's ability to correctly respond to a challenge posed by the system
+  - Biometrics: something the user is
+
+== Basic Mechanisms
+
+- Basic strategy:
+  - Keep the system minimal
+  - No new software versions
+  - Regularly update the system
+  - Install software only from trusted parties
+  - Strong passwords or no password
+- Advanced strategy:
+  - Apply the basic strategy
+  - Filter any outgoing network traffic
+  - Block any incoming new connection
+  - *Keep a checksum of all the files*
+  - *Only use encrypted network traffic*
+  - *Use containers or virtual machines to run sensitive services*
+  - Associate with each program a profile that restricts its capabilities
+- Paranoiac strategy:
+  - Apply the advanced strategy
+  - Encrypt all the disk, including the swap
+  - Isolate the computer, no network connection
+  - Keep an encrypted checksum of all the files
+  - Physically block all the ports, no external device can be connected
+
+== Key Points
+
+- What is security?
+- What are the two main types of encryption?
+- What are Access Control Lists?
+- What is the safest authentication method?
+- How safe can a computer be?
+
+= Multiple Processors Systems
+
+== Multiprocessor Setup
+
+- Three main approaches:
+  - Each CPU has its own OS: no sharing, all independent
+  - Master-slave multiprocessors: one CPU handles all the requests
+  - Symmetric Multi-Processor (SMP): one OS shared by all CPU
+- SMP
+  - Problems likely to occur:
+    - More than one CPUs run the same process
+    - A same free memory page is claimed at the same time
+- Synchronization
+  - A first idea:
+    - Lock the memory bus by asserting a special line on the bus
+    - The bus is only available to the processor which locked it
+    - Perform the necessary memory accesses
+    - Unlock the bus
+    - New multiprocessor issue: slows down the whole system
+      - Solution: do not lock the whole bus, but just the cache
+- Multiprocessors cache implementation:
+  - The requesting CPU reads the lock and copies it in its cache
+  - As long as the lock is unchanged the cached value can be used
+  - When the lock is released all the remote copies are invalidated
+  - All other CPUs must fetch the updated value
+  - Problems
+    - A whole cache block needs to be recopied each time
+    - Much traffic is generated just to check the lock
+
+== Multiprocessor Scheduling
+
+== Distributed Systems
+
 #set heading(numbering: "A.1.1", supplement: [Appendix])
 #counter(heading).update(0)
 
@@ -831,6 +920,79 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
 
 == Lab 7
 
+== Lab 8
+
+=== eBPF (TODO)
+
+```bash
+make NAME=helloworld obj  # Compile helloworld.o
+make NAME=helloworld autoattach  # Compile and attach to tracepoint
+```
+
+- Monitor certain parameters of the kernel
+- A simple page fault monitor with eBPF
+
+=== Memory Management
+
+- `mm` directory
+  - `kmsan`: Kernel Memory Sanitizer, targets *uninitialized memory* accesses in the kernel.
+  - `kasan`: Kernel Address Sanitizer, focuses on a broader range of memory errors like *out-of-bounds accesses and use-after-free*.
+  - `kfence`: Kernel Fine-Grained Error Notification, provides a lightweight, low-overhead method to *detect use-after-free errors* with fine-grained error reporting.
+  - Shadow memory: It works by *associating each byte of the application's memory with a corresponding entry in a "shadow" region of memory*, which stores metadata about the original memory location.
+  - `kmemleak.c` provides a way of detecting possible kernel memory leaks, similar to Valgrind in user-space.
+  - `nommu.c`
+    - Lack of virtual memory
+    - No memory isolation, processes have direct accesses to the entire physical memory
+    - No swap
+  - `oom_kill.c`: kills processes when the system is seriously out of memory
+- MGLRU
+  - multiple generations
+    - Pages that are not being accessed gets demoted to lower generations
+    - Evicted pages that suffer from page fault are being promoted to their original generation
+  - both recency and frequency of access are taken into account
+- Use `vmalloc` only for *large allocations that do not require contiguous memory* or when `kmalloc` fails to allocate sufficient memory.
+- `/dev/shm`: shared memory, typically used for IPC between processes
+- Page poisoning: *marking memory with a known value* to help detect memory corruption, such as use-after-free, buffer overflows, or uninitialized memory access.
+- Architecture specific files under `arch/`
+- `memblock` manages memory regions during early boot period when *the usual kernel memory allocators are not up and running*.
+
+== Lab 9
+
+=== Memory Management
+
+- Swap is only activated when there's no choice
+- Watermarks
+  - Below low watermark: swap, or even OOM killer
+  - Below medium watermark: aggressively reclaim memory
+  - Above high watermark: comfortable
+
+=== Grandpa's Dice
+
+- `fops`
+- `put_user()` moves data to user-space
+
+```c
+static int my_param = 10;
+module_param(my_param, int, S_IRUGO);
+```
+
+```bash
+sudo insmod my_module.ko my_param=42
+```
+
+== Lab 10
+
+- Copy a module to `/lib/modules/$(uname -r)` to make it known by the kernel
+- ```bash sudo depmod -a``` to generate `modules.dep` and `map`
+  - Scans /lib/modules
+  - Generates dependency file
+- Use `dbus` to listen to all system events: ```bash dbus-monitor --system```
+- `systemd`
+  - Service manager
+  - `/etc/systemd/system/` or `~/.config/systemd/user/`
+  - `[Unit]` `[Service]` `[Install]`
+  - ```bash sudo systemctl enable my-service.service```
+
 = Homework
 
 == Homework 1
@@ -877,6 +1039,23 @@ grep -rlw "nest_lock" --include-"*mutex"
 
 - A system has two processes and three identical resources. Each process needs a maximum of two resources. Can a deadlock occur?
   - No. A process can apply for the third resource.
+
+== Homework 6
+
+- thrashing: CPU spends the majority of its time swapping data between RAM and disk
+- Speculative Execution: Modern CPUs perform speculative execution, meaning they execute instructions before knowing if they are needed
+  - Meltdown: Meltdown abuses this feature by triggering speculative execution of code that should not normally have access to privileged memory
+  - Spectre: Spectre exploits CPU branch prediction mechanisms to access out-of-bounds memory
+- Dirty COW
+  - Copy on Write (COW): When a process forks a child process, it doesn't immediately duplicate the memory pages.
+
+== Homework 7
+
+- Tracing subprocesses using eBPF (TODO)
+
+== Homework 8
+
+- thin client: offloads the majority of the processing to a server
 
 = Mid-Term
 
