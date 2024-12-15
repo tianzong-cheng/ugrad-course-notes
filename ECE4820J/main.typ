@@ -489,6 +489,8 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
   - First fit: search for a hole big enough and use the first found
   - Best fit: search whole list and use smallest, big enough hole
   - Quick fit: maintain lists for common memory sizes, use the best
+    - Fast allocation and deallocation
+    - Internal fragmentation
 - Virtual memory
   - Generalization of the base and limit registers
   - Each process has its own address space
@@ -567,6 +569,7 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
 
 - Segmentation: Divides memory into variable-sized segments based on the logical structure of the program, such as code, data, stack, etc.
 - The size of each segment is variable
+  - So segmentation only leads to external fragmentation
 - External fragmentation v.s. internal fragmentation
   - Internal: Occurs if a page is not completely filled
   - External: Happens when free memory is divided into non-contiguous chunks.
@@ -578,6 +581,8 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
 - What is the swap area?
 - Cite two main page replacement algorithms
 - Discuss the differences between paging and segmentation
+  - Paging has higher swapping efficiency
+  - Paging has no external fragmentation, segmentation has no internal fragmentation
 - Explain external and internal fragmentation
 
 = Input-Output
@@ -603,7 +608,6 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
   - Since memory words are cached what if the content of a control register is cached?
     - MMIO regions are typically mapped with specific flags indicating they are non-cacheable
 - DMA
-  - TODO
 
 == Hardware Interrupts
 
@@ -989,9 +993,9 @@ sudo insmod my_module.ko my_param=42
 - Use `dbus` to listen to all system events: ```bash dbus-monitor --system```
 - `systemd`
   - Service manager
-  - `/etc/systemd/system/` or `~/.config/systemd/user/`
+  - Services stored under `/etc/systemd/system/` or `~/.config/systemd/user/`
   - `[Unit]` `[Service]` `[Install]`
-  - ```bash sudo systemctl enable my-service.service```
+  - ```bash sudo systemctl enable my-service.service``` to autostart service
 
 = Homework
 
