@@ -657,6 +657,79 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
 - Why should implementation be done using layers?
 - What is a plugin architecture and why is it so important?
 
+= File Systems
+
+== Requirements
+
+- Goals that need to be achieved:
+  - Store large amount of data
+  - Long term storage
+  - Information shared among multiple processes
+
+== Design
+
+- Contiguous allocation
+  - Simple to implement
+  - Fast: read a file using a single disk operation
+  - Fragmentation when deleting files
+- Linked list
+  - No fragmentation
+  - Slow random access
+- File Allocation Table
+  - Have a pointer for each disk block
+  - Store all the pointers in a table
+  - *Save the table in the RAM*
+  - Advantage: fast random access
+- *Inode*
+  - Structure storing:
+    - The file attributes
+    - Pointers on the blocks where the file is written
+  - Advantage: fast, requires little memory
+  - What if a large file needs more blocks that can fit in an inode?
+    - Point to the next inode
+- Journal
+  - Keep a journal of the operations:
+    - Log the operation to be performed, run it, and erase the log
+    - If a crash interrupts an operation, re-run it on next boot
+  - Which of the following operations can be safely applied more than once?
+    - Remove a file from a directory
+    - Release a file inode
+      - Released inode may have been allocated to other files
+    - Add a file disk blocks to the list of free blocks
+      - Double allocation
+
+== Management
+
+- Block size
+  - Small block size leads to a waste of time
+  - Large block size leads to a waste of space
+- Keeping track of the free blocks:
+  - Using a linked list: free blocks addresses are stored in a block
+  - Using a bitmap: one bit corresponds to one free block
+  - Using consecutive free blocks: a starting block and the number of free block following it
+- Common problems
+  - Block related inconsistency:
+    - List of free blocks is missing some blocks: add blocks to list
+    - Free blocks appear more than once in list: remove duplicates
+    - A block is present in several files: copy block and add it to the files
+  - File related inconsistency:
+    - Count in inode is higher: set link count to accurate value
+    - Count in inode is lower: set link count to accurate value
+- Caching
+  - Useless to cache inode blocks
+  - Dangerous to cache blocks essential to file system consistency
+  - Cache partially full blocks that are being written
+- Quota: limits the amount of disk space a user can use
+- Defragment: Useful for HDDs to improve performance by reducing seek times.
+- RAID
+
+== Key Points
+
+- What are the three main goals of a file system?
+- Describe a basic disk layout
+- Explain the structure of an inode
+- Mention three challenges in the design of a file system
+
 #set heading(numbering: "A.1.1", supplement: [Appendix])
 #counter(heading).update(0)
 
