@@ -928,9 +928,22 @@ Threads in user space is not able to run in the order of `A1 B1 A2 B2 A3 B3` (`A
 
 === eBPF (TODO)
 
+Compile:
+
 ```bash
 make NAME=helloworld obj  # Compile helloworld.o
 make NAME=helloworld autoattach  # Compile and attach to tracepoint
+```
+
+Map struct:
+
+```c
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);     // Use a hash map
+    __type(key, __u32);                  // Key is the user ID (UID)
+    __type(value, __u64);                // Value is the syscall count
+    __uint(max_entries, 1024);           // Max entries, adjust as needed
+} ecmap SEC(".maps");
 ```
 
 - Monitor certain parameters of the kernel
