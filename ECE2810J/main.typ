@@ -10,6 +10,8 @@
   listing-index: (enabled: true),
 )
 
+#show raw: set text(font: "Monaco")
+
 = Asymptotic Algorithm Analysis
 
 - Big O Notation: upper bound
@@ -746,3 +748,341 @@ If the min heap property is violated:
 4. If a node n not in the root list has lost a child for the second time, the subtree rooted at `n` should also be cut from `n`'s parent and move to the root list
 
 Purpose: This balancing through cascading cuts is essential for preserving the amortized time complexity of key Fibonacci heap operations, ensuring they stay efficient.
+
+= Search
+
+== Binary Search Tree
+
+- Assume: all the keys are distinct
+- Idea: The key of any node is greater than the keys of all nodes in its left subtree and smaller than the keys of all nodes in its right tree.
+- Time complexity
+  - Search, insertion, removal: $O(log n)$
+- Use *reference to pointer* in insert function
+
+```cpp
+void insertRecursive(Node *&node, int value) {
+  if (node == nullptr) {
+    node = new Node(value);
+  } else if (value < node->data) {
+    insertRecursive(node->left, value);
+  } else if (value > node->data) {
+    insertRecursive(node->right, value);
+  }
+}
+```
+
+- Delete
+  - No child or only one child: delete and move its child up
+  - Two children: replace the deleted node with its in-order successor and delete its in-order successor
+    - Note that the node is guaranteed to have a in-order successor since it has two children
+
+```cpp
+Node *temp = findMinNode(node->right);
+node->data = temp->data;
+node->right = removeRecursive(node->right, temp->data);
+```
+
+- Hash table has search, insert, delete time complexity of $O(1)$. Why BST?
+  - BST maintains order and thus supports ordered traversal and range queries
+- Predecessor and successor
+  - Left subtree is not empty
+    - max in the left subtree
+  - Left subtree is empty
+    - first left ancestor (the first ancestor that is smaller)
+- Rank search
+  - Smallest key has rank 0
+  - Keep extra information: the size of left subtree
+
+```cpp
+node *rankSearch(node *root, int rank) {
+  if(root == NULL) return NULL;
+  if(rank == root->leftSize) return root;
+  if(rank < root->leftSize)
+    return rankSearch(root->left, rank);
+  else
+    return rankSearch(root->right, rank - 1 - root->leftSize);
+}
+```
+
+- Range search
+
+```cpp
+void rangeSearch(int low, int high) { rangeSearchRecursive(root, low, high); }
+void rangeSearchRecursive(TreeNode *node, int low, int high) {
+  if (node == nullptr)
+    return;
+  if (node->data > low)
+    rangeSearchRecursive(node->left, low, high);
+  if (node->data >= low && node->data <= high)
+    std::cout << node->data << " ";
+  if (node->data < high)
+    rangeSearchRecursive(node->right, low, high);
+}
+```
+
+== $k$-d Tree
+
+- Idea: At each level, keys from a different search dimension is used as the discriminator
+- Insert
+
+```cpp
+void insert(node *&root, Item item, int dim) {
+  if(root == NULL) {
+    root = new node(item);
+    return;
+  }
+  if(item.key == root->item.key)
+    return;
+  if(item.key[dim] < root->item.key[dim])
+    insert(root->left, item, (dim+1)%numDim);
+  else
+    insert(root->right, item, (dim+1)%numDim);
+}
+```
+
+- Remove
+  - Replace with the predecessor or successor in the current dimension
+  - Remove the predecessor or successor (recursive until reaching leaf node)
+- Find minimum
+  - Complexity: $(1/2)^(L/M)$, where $L$ is the number of levels and $M$ is the number of dimensions
+
+```cpp
+node *findMin(node *root, int dimCmp, int dim) {
+  if(!root) return NULL;
+  node *min = findMin(root->left, dimCmp, (dim+1)%numDim);
+  if(dimCmp != dim) {  // dim is only for this comparison
+    rightMin = findMin(root->right, dimCmp, (dim+1)%numDim);
+    min = minNode(min, rightMin, dimCmp);
+  }
+  return minNode(min, root, dimCmp);
+}
+```
+
+- Multidimensional range search (TODO)
+
+== Trie
+
+- Idea: Labels of edges on the path from the root to any leaf in the trie forms a prefix of a string in that leaf
+- Implementation issue
+  - "ant" and "anteater": add a symbol "\$" indicating the end of a string
+  - Child nodes are stored in the form of linked list
+  - After removing a node, if the parent node has only one child, move the child up
+- Time complexity
+  - Worst case $O(k)$, where $k$ is the length of the string
+
+== AVL Tree
+
+- Criteria
+  - Height = $O(log n)$
+  - Re-balance efficiency: $O(log n)$
+- Idea: The height of left and right subtrees differ by at most 1
+- *Balance factor*
+  - $B_T = h_l - h_r$
+  - $|B_T| <= 1$
+- Types of imbalance after inserting
+  - LL
+    - Balance factor of unbalanced node: 2
+    - Balance factor of unbalanced node's left child: 1
+    - Right rotation at unbalanced node
+  - LR
+    - Balance factor of unbalanced node: 2
+    - Balance factor of unbalanced node's left child: -1
+    - Left rotation at left child, then right rotation at unbalanced node
+- Right rotate
+
+```cpp
+Node *rightRotate(Node *y) {
+  Node *x = y->left;
+  Node *T2 = x->right;
+
+  x->right = y;
+  y->left = T2;
+
+  y->height = max(height(y->left), height(y->right)) + 1;
+  x->height = max(height(x->left), height(x->right)) + 1;
+
+  return x;
+}
+```
+
+- Balance
+
+```cpp
+void Balance(Node *&root) {
+  int balance = getBalance(root);
+
+  // Left Left Case
+  if (balance > 1 && getBalance(root->left) >= 0)
+    root = rightRotate(root);
+
+  // Left Right Case
+  if (balance > 1 && getBalance(root->left) < 0) {
+    root->left = leftRotate(root->left);
+    root = rightRotate(root);
+  }
+
+  // Right Right Case
+  if (balance < -1 && getBalance(root->right) <= 0)
+    root = leftRotate(root);
+
+  // Right Left Case
+  if (balance < -1 && getBalance(root->right) > 0) {
+    root->right = rightRotate(root->right);
+    root = leftRotate(root);
+  }
+}
+```
+
+- Insert
+  - Adjust height and balance during rewinding: Multiple ancestors will be unbalanced after insertion, re-balancing the nearest ancestor balances the rest
+
+```cpp
+void insert(Node *&root, Item item) {
+  if (root == nullptr) {
+    root = new Node(item);
+    return;
+  }
+  if (item.key < root->item.key)
+    insert(root->left, item);
+  else if (item.key > root->item.key)
+    insert(root->right, item);
+
+  AdjustHeight(root);
+  Balance(root);
+}
+```
+
+- Delete
+  - Every ancestor needs to be checked. Multiple balance operations may be needed.
+- Time complexity
+  - Search, insert, delete: $O(log n)$
+
+== Red-Black Tree
+
+- Properties
+  1. A red-black tree is a binary search tree
+  2. The root node and leaf nodes are black
+  3. No two consecutive nodes are red
+  4. From the same node, all paths to leaf nodes have the same number of black nodes
+- We can conclude from the properties above that: the longest path is no longer than twice the length of the shortest path. So red-black tree has a weaker constraint than AVL tree.
+- Max height = $2 log(n+1)$
+- Note that the leaf nodes are null nodes but are also considered as black nodes
+- Insert
+  - Default color is red
+    - Check properties 2 and 3
+    - If the node being checked is root node (violates root property): set node to black
+    - If uncle node is red (violates red property): set parent, uncle, grandparent to black and check grandparent
+    - If uncle node is black (violates red property)
+      - Example: Current node is the grandparent's left child's right child: LR type
+      - Rotate like AVL tree
+- Delete (TODO)
+  - No children
+    - Red node
+      - Simply remove (doesn't violate path property)
+    - Black node
+      - Sibling is black
+        - Sibling has at least one red child
+          - The red child is parent's left child's left child: LL
+        - Sibling only has black children
+      - Sibling is red
+  - Only left child or only right child
+    - Due to the properties of red-black tree, this can only be a black parent with a red child
+    - Replace with its only child and make it black
+  - Both left subtree and right subtree
+
+= Graph
+
+== Basics
+
+- Vertices, Edges
+- Simple graph
+  - No self loop
+  - No parallel edges
+- Simple path: a path with no node appearing twice
+- Connected graph: a graph where a simple path exists between all pairs of nodes
+- A directed graph is weakly connected if there is a simple path between any pair of nodes in the underlying undirected graph
+- A graph with no cycle is called an acyclic graph
+- A directed graph with no cycles is called a directed acyclic graph, or DAG for short
+- Sparse graph v.s. dense graph
+- Adjacency matrix
+  - Adjacency matrix for weighted graph: $infinity$ for no edge
+- Adjacency list
+  - Each node has a linked list of neighbors
+
+== Search
+
+- BFS
+  - Adjacency matrix: $O(|V|^2)$
+  - Adjacency list: $O(|V| + |E|)$
+- Traverse all nodes if the graph is not connected:
+
+```
+for (each node v in G)
+  if (v is not visited)
+    DFS(v)
+```
+
+== Topological Sort
+
+- Topological sorting : an ordering on nodes of a directed graph so that for each edge $(v_i, v_j)$ in the graph, $v_i$ is before $v_j$ in the ordering.
+- Logic
+  1. Compute the in-degrees of all nodes
+  2. Enqueue all nodes with 0 in-degree
+  3. While queue is not empty
+    1. Dequeue node v
+    2. Decrement the in-degrees of node v's neighbors
+    3. Enqueue neighbors with 0 in-degree
+
+== Minimum Spanning Tree
+
+=== Problem
+
+- Claim: Any connected graph with $N$ nodes and $N - 1$ edges is a tree.
+- Spanning tree
+  - Subgraph of $G$ which contains all the nodes of $G$
+  - Is a tree
+
+=== Prim's Algorithm
+
+- Pseudocode
+  1. Pick a random node $s$, $T = {s}$ and $T' = V - {s}$
+  2. While $T' != emptyset$
+    1. Select an edge with the smallest weight that connects between a node in $T$ and a node in $T'$. Move the connected node in $T'$ to $T$.
+- Time complexity
+  - Linear scan $T'$: $O(|V|^2)$
+  - Use binary heap to store $D(v)$: $O((|V| + |E|) log |V|)$
+  - Use Fibonacci heap to store $D(v)$: $O(|V| log |V| + |E|)$
+  - Fibonacci heap is the best. Binary heap is as good when the graph is sparse.
+
+== Shortest Path
+
+=== Unweighted Map
+
+- Use BFS
+- Additional bookkeeping
+  - Store the distance from the source node
+  - Store the predecessor on the shortest path
+- Backtrack from the destination
+
+=== Dijkstra's Algorithm
+
+- Weights must be non-negative
+
+```
+while Q is not empty:
+  u ← vertex in Q with minimum dist[u]
+  remove u from Q
+  for each neighbor v of u still in Q:
+    alt ← dist[u] + Graph.Edges(u, v)
+    if alt < dist[v]:
+      dist[v] ← alt
+      prev[v] ← u
+return dist[], prev[]
+```
+
+= Dynamic Programming
+
+1. Divide into sub-problems
+2. Figure out the state transition function
+3. Solve sub-problems
+4. Use the result of sub-problems to solve bigger problems
